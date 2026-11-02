@@ -1,0 +1,6 @@
+{
+  "name": "Persona Prompt Bot",
+  "description": "An adaptive multi-persona AI assistant featuring Teacher, Marketer, Developer, Recruiter, and Consultant personas with customizable tone, depth, search grounding, and deep reasoning.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

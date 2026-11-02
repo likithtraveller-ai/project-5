@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all documents
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidPersona(persona) {
+      return persona in ['TEACHER', 'MARKETER', 'DEVELOPER', 'RECRUITER', 'CONSULTANT'];
+    }
+
+    function isValidTone(tone) {
+      return tone in ['friendly', 'professional', 'concise'];
+    }
+
+    function isValidLength(len) {
+      return len in ['short', 'detailed'];
+    }
+
+    function isValidSession(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'persona', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'userId', 'title', 'persona', 'tone', 'length', 'model', 'searchGrounding', 'thinkingMode', 'messages', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId == request.auth.uid
+        && data.title is string && data.title.size() <= 128
+        && isValidPersona(data.persona)
+        && (!('tone' in data) || isValidTone(data.tone))
+        && (!('length' in data) || isValidLength(data.length))
+        && (!('model' in data) || (data.model is string && data.model.size() <= 64))
+        && (!('searchGrounding' in data) || data.searchGrounding is bool)
+        && (!('thinkingMode' in data) || data.thinkingMode is bool)
+        && (!('messages' in data) || (data.messages is list && data.messages.size() <= 200));
+    }
+
+    function isValidProfile(data) {
+      return data.keys().hasAll(['userId', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'email', 'displayName', 'photoURL', 'defaultPersona', 'defaultTone', 'defaultLength', 'createdAt', 'updatedAt'])
+        && data.userId is string && data.userId == request.auth.uid
+        && (!('email' in data) || (data.email is string && data.email.size() <= 256))
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512))
+        && (!('defaultPersona' in data) || (data.defaultPersona is string && isValidPersona(data.defaultPersona)))
+        && (!('defaultTone' in data) || (data.defaultTone is string && isValidTone(data.defaultTone)))
+        && (!('defaultLength' in data) || (data.defaultLength is string && isValidLength(data.defaultLength)));
+    }
+
+    match /users/{userId} {
+      allow get, list: if isOwner(userId) && isValidId(userId);
+
+      match /sessions/{sessionId} {
+        allow get, delete: if isOwner(userId) && isValidId(sessionId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && isValidId(sessionId)
+          && isValidSession(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(sessionId)
+          && isValidSession(incoming())
+          && incoming().updatedAt == request.time
+          && incoming().createdAt == existing().createdAt
+          && incoming().userId == existing().userId
+          && incoming().id == existing().id;
+      }
+
+      match /profile/{docId} {
+        allow get, delete: if isOwner(userId) && isValidId(docId);
+        allow create: if isOwner(userId)
+          && isValidId(docId)
+          && isValidProfile(incoming())
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(docId)
+          && isValidProfile(incoming())
+          && incoming().updatedAt == request.time
+          && incoming().createdAt == existing().createdAt
+          && incoming().userId == existing().userId;
+      }
+    }
+  }
+}

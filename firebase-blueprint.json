@@ -1,0 +1,111 @@
+{
+  "entities": {
+    "UserSession": {
+      "title": "UserSession",
+      "description": "A persona prompt chat conversation session belonging to a user",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "persona": {
+          "type": "string",
+          "enum": ["TEACHER", "MARKETER", "DEVELOPER", "RECRUITER", "CONSULTANT"]
+        },
+        "tone": {
+          "type": "string",
+          "enum": ["friendly", "professional", "concise"]
+        },
+        "length": {
+          "type": "string",
+          "enum": ["short", "detailed"]
+        },
+        "model": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "searchGrounding": {
+          "type": "boolean"
+        },
+        "thinkingMode": {
+          "type": "boolean"
+        },
+        "messages": {
+          "type": "array"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "userId", "title", "persona", "createdAt", "updatedAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile settings and defaults",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "defaultPersona": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "defaultTone": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "defaultLength": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": "UserSession",
+      "description": "User conversation sessions with persona and message histories"
+    },
+    "/users/{userId}/profile/info": {
+      "schema": "UserProfile",
+      "description": "Private user profile and defaults"
+    }
+  }
+}
